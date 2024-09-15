@@ -15,10 +15,10 @@ const ALPHA_VANTAGE_API_KEY = process.env.ALPHA_VANTAGE_API_KEY;
 const openai = new OpenAI({ apiKey: OPENAI_API_KEY });
 
 app.use(cors({
-  origin: 'https://your-allowed-origin.com' // Replace with your allowed origin
+  origin: 'https://stock-market-summarizer.netlify.app' 
 }));
 
-// Function to fetch Alpha Vantage data
+
 const fetchAlphaVantageData = async () => {
     const url = `https://www.alphavantage.co/query?function=TOP_GAINERS_LOSERS&apikey=${ALPHA_VANTAGE_API_KEY}`;
 
@@ -36,7 +36,7 @@ const fetchAlphaVantageData = async () => {
     }
 };
 
-// Function to get a summary from OpenAI
+
 const getCompletion = async (data) => {
     try {
         const completion = await openai.chat.completions.create({
@@ -61,13 +61,13 @@ const getCompletion = async (data) => {
     }
 };
 
-// Route to handle summary generation
+
 app.get('/summarize-market', async (req, res) => {
     const data = await fetchAlphaVantageData();
     if (data) {
         const summary = await getCompletion(data);
         if (summary) {
-            res.json({ summary });  // Return the OpenAI summary as JSON
+            res.json({ summary });  
         } else {
             res.status(500).json({ error: "Failed to generate summary from OpenAI" });
         }
@@ -76,7 +76,7 @@ app.get('/summarize-market', async (req, res) => {
     }
 });
 
-// Start the server
+
 app.listen(PORT, () => {
     console.log(`Server is running on port ${PORT}`);
 });
