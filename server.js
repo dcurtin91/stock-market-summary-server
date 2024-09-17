@@ -1,3 +1,9 @@
+import { initializeApp } from 'firebase/app';
+import {
+    getFirestore,
+    doc,
+    setDoc,
+  } from "firebase/firestore";
 import OpenAI from "openai";
 import request from 'request-promise'; 
 import dotenv from 'dotenv';
@@ -6,6 +12,18 @@ import express from 'express';
 
 dotenv.config();
 
+const firebaseConfig = {
+    apiKey: process.env.FIREBASE_API_KEY,
+    authDomain: "stock-market-summarizer.firebaseapp.com",
+    projectId: "stock-market-summarizer",
+    storageBucket: "stock-market-summarizer.appspot.com",
+    messagingSenderId: "219851290952",
+    appId: "1:219851290952:web:bad6129a8901a5e4e61b7d",
+    measurementId: "G-B9BJC82143"
+  };
+
+const firebaseApp = initializeApp(firebaseConfig);
+const db = getFirestore(firebaseApp);
 const app = express();
 const PORT = process.env.PORT || 3000;
 
@@ -68,7 +86,10 @@ app.get('/summarize-market', async (req, res) => {
     if (data) {
         const summary = await getCompletion(data);
         if (summary) {
-            res.json({ summary });  
+            res.json({ summary });
+            const docRef = doc(db, 'summaries', 'lastest');
+            const parsedSummary = JSON.parse(summary);
+            setDoc(docRef, { parsedSummary }); 
         } else {
             res.status(500).json({ error: "Failed to generate summary from OpenAI" });
         }
@@ -76,6 +97,8 @@ app.get('/summarize-market', async (req, res) => {
         res.status(500).json({ error: "Failed to fetch Alpha Vantage data" });
     }
 });
+
+
 
 
 app.listen(PORT, () => {
