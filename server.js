@@ -32,6 +32,12 @@ const ALPHA_VANTAGE_API_KEY = process.env.ALPHA_VANTAGE_API_KEY;
 
 const openai = new OpenAI({ apiKey: OPENAI_API_KEY });
 
+const date = new Date();
+let day = date.getDate();
+let month = date.getMonth() + 1;
+let year = date.getFullYear();
+let currentDate = `${day}-${month}-${year}`;
+
 app.use(cors({
   origin: 'https://stock-market-summarizer.netlify.app' 
 }));
@@ -87,7 +93,7 @@ app.get('/summarize-market', async (req, res) => {
         const summary = await getCompletion(data);
         if (summary) {
             res.json({ summary });
-            const docRef = doc(db, 'summaries', 'lastest');
+            const docRef = doc(db, 'summaries', `${currentDate}`);
             const parsedSummary = JSON.parse(summary);
             setDoc(docRef, { parsedSummary }); 
         } else {
