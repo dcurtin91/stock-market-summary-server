@@ -39,7 +39,7 @@ let year = date.getFullYear();
 let currentDate = `${year}-${month}-${day}`;
 
 app.use(cors({
-  origin: 'https://stock-market-summarizer.netlify.app' 
+  origin: '*' 
 }));
 
 
