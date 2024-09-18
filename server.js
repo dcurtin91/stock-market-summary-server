@@ -36,7 +36,7 @@ const date = new Date();
 let day = date.getDate();
 let month = date.getMonth() + 1;
 let year = date.getFullYear();
-let currentDate = `${day}-${month}-${year}`;
+let currentDate = `${year}-${month}-${day}`;
 
 app.use(cors({
   origin: 'https://stock-market-summarizer.netlify.app' 
@@ -95,7 +95,7 @@ app.get('/summarize-market', async (req, res) => {
             res.json({ summary });
             const docRef = doc(db, 'summaries', `${currentDate}`);
             const parsedSummary = JSON.parse(summary);
-            setDoc(docRef, { parsedSummary }); 
+            setDoc(docRef, parsedSummary); 
         } else {
             res.status(500).json({ error: "Failed to generate summary from OpenAI" });
         }
