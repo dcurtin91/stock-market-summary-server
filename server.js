@@ -74,6 +74,7 @@ const getCompletion = async (data) => {
                         - 'sectors': Notable sector performances (2 - 3 sentences).
                         - 'top_gainers': Top gainers, 2 to 3 each.
                         - 'top_losers': Top losers, 2 to 3 each.
+                        - 'timestamp': Timestamp for the request.
                         Here is the data: ${JSON.stringify(data)}`
                 }
             ],
