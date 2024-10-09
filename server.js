@@ -68,15 +68,25 @@ const getCompletion = async (data) => {
             messages: [
                 { role: "system", content: "You are a helpful assistant." },
                 {
-                    role: "user",
-                    content: `Summarize today's stock market performance. Format the JSON as the following:
-                        - 'summary': 4 to 5 sentence summary.
-                        - 'sectors': Notable sector performances (2 - 3 sentences).
-                        - 'top_gainers': Top gainers, 2 to 3 each.
-                        - 'top_losers': Top losers, 2 to 3 each.
-                        - 'timestamp': Timestamp for the request.
-                        Here is the data: ${JSON.stringify(data)}`
-                }
+                    "role": "user",
+                    "content": `Summarize today's stock market performance in the following JSON format (please do not include any copy before the json response):
+                  
+                    {
+                        "summary": "<Brief summary of the market in 4 - 5 sentences.>",
+                        "sectors": "<Notable sector performances in 2 -3 sentences.>",
+                        "top_gainers": [
+                            {"ticker": "<Ticker symbol>", "price": "<Price>", "change_amount": "<Change amount>", "change_percentage": "<Change percentage>", "volume": "<Volume>"},
+                            // ... 2 other top gainers
+                        ],
+                        "top_losers": [
+                            {"ticker": "<Ticker symbol>", "price": "<Price>", "change_amount": "<Change amount>", "change_percentage": "<Change percentage>", "volume": "<Volume>"},
+                            // ... 2 other top losers
+                        ],
+                        "timestamp": "<Timestamp in ISO 8601 format>"
+                    }
+                  
+                    Here is the data: ${JSON.stringify(data)}`
+                  }
             ],
         });
         console.log("OpenAI Summary Generated");
