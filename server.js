@@ -82,7 +82,7 @@ const getCompletion = async (data) => {
                             {"ticker": "<Ticker symbol>", "price": "<Price>", "change_amount": "<Change amount>", "change_percentage": "<Change percentage>", "volume": "<Volume>"},
                             // ... 2 other top losers
                         ],
-                        "timestamp": "<Timestamp in ISO 8601 format>"
+                        "timestamp": "<Today's date is ${currentDate}. Provide timestamp in ISO 8601 format>"
                     }
                   
                     Here is the data: ${JSON.stringify(data)}`
