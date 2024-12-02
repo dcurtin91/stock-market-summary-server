@@ -76,6 +76,7 @@ const getCompletion = async (data) => {
                         "most_actively_traded": [
                             {"ticker": "<Ticker symbol>"},
                             // ... 2 other most actively traded
+                        ],
                         "top_gainers": [
                             {"ticker": "<Ticker symbol>", "price": "<Price>", "change_amount": "<Change amount>", "change_percentage": "<Change percentage>", "volume": "<Volume>"},
                             // ... 2 other top gainers
