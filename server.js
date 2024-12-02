@@ -73,7 +73,7 @@ const getCompletion = async (data) => {
                   
                     {
                         "summary": "<Brief summary of the market in 4 - 5 sentences.>",
-                        "sectors": "<Notable sector performances in 2 -3 sentences.>",
+                        "sectors": "<Based on the most actively traded stocks, list sectors that had notable amounts of activity in 2 -3 sentences.>",
                         "top_gainers": [
                             {"ticker": "<Ticker symbol>", "price": "<Price>", "change_amount": "<Change amount>", "change_percentage": "<Change percentage>", "volume": "<Volume>"},
                             // ... 2 other top gainers
