@@ -73,7 +73,9 @@ const getCompletion = async (data) => {
                   
                     {
                         "summary": "<Brief summary of the market in 4 - 5 sentences.>",
-                        "sectors": "<List the 3 most actively traded stocks and the sectors they're in. If you're not sure which sector a stock is in don't mention it, just list the ticker.>",
+                        "most_actively_traded": [
+                            {"ticker": "<Ticker symbol>"},
+                            // ... 2 other most actively traded
                         "top_gainers": [
                             {"ticker": "<Ticker symbol>", "price": "<Price>", "change_amount": "<Change amount>", "change_percentage": "<Change percentage>", "volume": "<Volume>"},
                             // ... 2 other top gainers
