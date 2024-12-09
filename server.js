@@ -119,17 +119,23 @@ const fetchAlphaVantageData = async () => {
 // });
 
 app.get('/summarize-market', async (req, res) => {
-    const data = await fetchAlphaVantageData();
-    if (data) {
-        res.json({ data });
-        const docRef = doc(db, 'summaries', `${currentDate}`);
-        const parsedSummary = JSON.parse(data);
-        setDoc(docRef, parsedSummary);
+    try {
+        const data = await fetchAlphaVantageData();
+        if (data) {
+            const docRef = doc(db, 'summaries', currentDate);
 
-    } else {
-        res.status(500).json({ error: "Failed to fetch Alpha Vantage data" });
+            await setDoc(docRef, { ...data, timestamp: new Date().toISOString() });
+            
+            res.json({ message: "Data saved to Firestore", data });
+        } else {
+            res.status(500).json({ error: "Failed to fetch Alpha Vantage data" });
+        }
+    } catch (err) {
+        console.error("Error while saving data to Firestore:", err);
+        res.status(500).json({ error: "Internal Server Error", details: err.message });
     }
 });
+
 
 
 
