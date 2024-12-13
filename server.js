@@ -4,7 +4,6 @@ import {
     doc,
     setDoc,
 } from "firebase/firestore";
-//import OpenAI from "openai";
 import request from 'request-promise';
 import dotenv from 'dotenv';
 import cors from 'cors';
@@ -27,16 +26,17 @@ const db = getFirestore(firebaseApp);
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-//const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
+
 const ALPHA_VANTAGE_API_KEY = process.env.ALPHA_VANTAGE_API_KEY;
 
-//const openai = new OpenAI({ apiKey: OPENAI_API_KEY });
 
 const date = new Date();
 let day = date.getDate();
+//let week_ago = date.getDate() - 7;
 let month = date.getMonth() + 1;
 let year = date.getFullYear();
 let currentDate = `${year}-${month}-${day}`;
+let startDate = `${year}${month}01T0130`; //this needs to be fixed!!!
 
 app.use(cors({
     origin: '*'
@@ -60,63 +60,27 @@ const fetchAlphaVantageData = async () => {
     }
 };
 
-
-// const getCompletion = async (data) => {
-//     try {
-//         const completion = await openai.chat.completions.create({
-//             model: "gpt-4",
-//             messages: [
-//                 { role: "system", content: "You are a helpful assistant." },
-//                 {
-//                     "role": "user",
-//                     "content": `Summarize today's stock market performance in the following JSON format (please do not include any copy before the json response):
-
-//                     {
-//                         "summary": "<Brief summary of the market in 4 - 5 sentences.>",
-//                         "most_actively_traded": [
-//                             {"ticker": "<Ticker symbol>"},
-//                             // ... 2 other most actively traded
-//                         ],
-//                         "top_gainers": [
-//                             {"ticker": "<Ticker symbol>", "price": "<Price>", "change_amount": "<Change amount>", "change_percentage": "<Change percentage>", "volume": "<Volume>"},
-//                             // ... 2 other top gainers
-//                         ],
-//                         "top_losers": [
-//                             {"ticker": "<Ticker symbol>", "price": "<Price>", "change_amount": "<Change amount>", "change_percentage": "<Change percentage>", "volume": "<Volume>"},
-//                             // ... 2 other top losers
-//                         ],
-//                         "timestamp": "<Today's date is ${currentDate}. Provide timestamp in ISO 8601 format>"
-//                     }
-
-//                     Here is the data: ${JSON.stringify(data)}`
-//                   }
-//             ],
-//         });
-//         console.log("OpenAI Summary Generated");
-//         return completion.choices[0].message.content;
-//     } catch (err) {
-//         console.error('Error:', err);
-//         return null;
-//     }
-// };
+const fetchNewsArticles = async (ticker) => {
+    // if (!ticker) {
+    //     throw new Error("Ticker is required to fetch news articles");
+    // }
+    
+    const url = `https://www.alphavantage.co/query?function=NEWS_SENTIMENT&tickers=${ticker}&time_from=${startDate}&apikey=${ALPHA_VANTAGE_API_KEY}`;
+    try {
+        const response = await request.get({
+            url: url,
+            json: true,
+            header: { 'User-Agent': 'request' }
+        });
+        console.log("Articles captured");
+        return response;
+    } catch (err) {
+        console.error('Error:', err);
+        return null;
+    }
+};
 
 
-// app.get('/summarize-market', async (req, res) => {
-//     const data = await fetchAlphaVantageData();
-//     if (data) {
-//         const summary = await getCompletion(data);
-//         if (summary) {
-//             res.json({ summary });
-//             const docRef = doc(db, 'summaries', `${currentDate}`);
-//             const parsedSummary = JSON.parse(summary);
-//             setDoc(docRef, parsedSummary); 
-//         } else {
-//             res.status(500).json({ error: "Failed to generate summary from OpenAI" });
-//         }
-//     } else {
-//         res.status(500).json({ error: "Failed to fetch Alpha Vantage data" });
-//     }
-// });
 
 app.get('/summarize-market', async (req, res) => {
     try {
@@ -132,6 +96,20 @@ app.get('/summarize-market', async (req, res) => {
         }
     } catch (err) {
         console.error("Error while saving data to Firestore:", err);
+        res.status(500).json({ error: "Internal Server Error", details: err.message });
+    }
+});
+
+app.get('/articles', async (req, res) => {
+    const ticker = req.query.ticker;
+    try {
+        const data = await fetchNewsArticles(ticker);
+        if (data) {
+            res.json({ data });
+        } else {
+            res.status(500).json({ error: "Failed to get articles" });
+        }
+    } catch (err) {
         res.status(500).json({ error: "Internal Server Error", details: err.message });
     }
 });
