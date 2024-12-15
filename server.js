@@ -68,6 +68,7 @@ const fetchAlphaVantageData = async () => {
 
 const fetchNewsArticles = async (ticker) => {
     const url = `https://www.alphavantage.co/query?function=NEWS_SENTIMENT&tickers=${ticker}&time_from=${startDate}&apikey=${ALPHA_VANTAGE_API_KEY}`;
+    console.log(url);
     try {
         const response = await request.get({
             url: url,
@@ -114,7 +115,7 @@ app.get('/news1', async (req, res) => {
 
         querySnapshot.forEach((doc) => {
             const data = doc.data();
-            ticker = data.most_actively_traded[0].ticker;
+            ticker = data.most_actively_traded[1].ticker;
         });
 
         if (!ticker) {
@@ -122,12 +123,17 @@ app.get('/news1', async (req, res) => {
         }
 
         console.log(`Most recent ticker fetched: ${ticker}`);
-        const articles = await fetchNewsArticles(ticker);
-        console.log(articles);
-
+       
+            const articles = await fetchNewsArticles(ticker);
+            
+                const docRef = doc(db, 'articles', currentDate);
+                await setDoc(docRef, {...articles, timestamp: new Date().toISOString() });
+                res.json({ message: "Articles saved to Firestore", articles });
+          
+      
     } catch (err) {
         console.error(err);
-        res.status(500).json({ error: "internal server error", details: err.message});
+        res.status(500).json({ error: "internal server error", details: err.message });
     }
 });
 
