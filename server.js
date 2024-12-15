@@ -87,7 +87,7 @@ const fetchNewsArticles = async (ticker) => {
     }
 };
 
-const getAnalysis = async (articles) => {
+const getAnalysis = async (articles, ticker) => {
     try {
         const completion = await openai.chat.completions.create({
             model: "gpt-4",
@@ -95,11 +95,11 @@ const getAnalysis = async (articles) => {
                 { role: "system", content: "You are a helpful assistant." },
                 {
                     "role": "user",
-                    "content": `Summarize today's stock market performance in the following JSON format (please do not include any copy before the json response):
+                    "content": `Please respond in JSON format (please do not include any copy before the json response):
             {
-                "analysis": "<Summary of the overall sentiment toward the stock in 4 -5 sentences. Use simple terms.>"
+                "analysis": "<Based on the data provided, share a summary of the overall sentiment toward this stock ${ticker} in 4-5 sentences. Use simple terms.>"
             }
-                ${JSON.stringify(articles)}`
+                ${JSON.stringify(articles.feed.ticker_sentiment)}`
                 }
             ],
         });
@@ -112,7 +112,6 @@ const getAnalysis = async (articles) => {
 };
 
 const writeAnalysis = async (analysis) => {
-    res.json({ analysis });
     const docRef = doc(db, 'analysis', currentDate);
     const parsedAnalysis = JSON.parse(analysis);
     setDoc(docRef, parsedAnalysis);
@@ -163,7 +162,7 @@ app.get('/news1', async (req, res) => {
         await setDoc(docRef, { ...articles, timestamp: new Date().toISOString() });
         res.json({ message: "Articles saved to Firestore", articles });
 
-        const analysis = await getAnalysis(articles);
+        const analysis = await getAnalysis(articles, ticker);
         if (analysis) {
             writeAnalysis(analysis);
         } else {
@@ -185,16 +184,3 @@ app.listen(PORT, () => {
 });
 
 
-// app.get('/articles', async (req, res) => {
-//     const ticker = req.query.ticker;
-//     try {
-//         const data = await fetchNewsArticles(ticker);
-//         if (data) {
-//             res.json({ data });
-//         } else {
-//             res.status(500).json({ error: "Failed to get articles" });
-//         }
-//     } catch (err) {
-//         res.status(500).json({ error: "Internal Server Error", details: err.message });
-//     }
-// });
