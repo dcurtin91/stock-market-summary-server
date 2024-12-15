@@ -4,12 +4,13 @@ import {
     doc,
     setDoc,
     query,
-    collection, 
+    collection,
     orderBy,
     getDocs,
     limit,
 } from "firebase/firestore";
 import request from 'request-promise';
+import OpenAI from "openai";
 import dotenv from 'dotenv';
 import cors from 'cors';
 import express from 'express';
@@ -33,6 +34,9 @@ const PORT = process.env.PORT || 3000;
 
 
 const ALPHA_VANTAGE_API_KEY = process.env.ALPHA_VANTAGE_API_KEY;
+const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
+
+const openai = new OpenAI({ apiKey: OPENAI_API_KEY });
 
 
 const date = new Date();
@@ -83,7 +87,36 @@ const fetchNewsArticles = async (ticker) => {
     }
 };
 
+const getAnalysis = async (articles) => {
+    try {
+        const completion = await openai.chat.completions.create({
+            model: "gpt-4",
+            messages: [
+                { role: "system", content: "You are a helpful assistant." },
+                {
+                    "role": "user",
+                    "content": `Summarize today's stock market performance in the following JSON format (please do not include any copy before the json response):
+            {
+                "analysis": "<Summary of the overall sentiment toward the stock in 4 -5 sentences. Use simple terms.>"
+            }
+                ${JSON.stringify(articles)}`
+                }
+            ],
+        });
+        console.log("OPENAI Summary Generated");
+        return completion.choices[0].message.content;
+    } catch (err) {
+        console.error('Error:', err);
+        return null;
+    }
+};
 
+const writeAnalysis = async (analysis) => {
+    res.json({ analysis });
+    const docRef = doc(db, 'analysis', currentDate);
+    const parsedAnalysis = JSON.parse(analysis);
+    setDoc(docRef, parsedAnalysis);
+};
 
 app.get('/summarize-market', async (req, res) => {
     try {
@@ -92,7 +125,7 @@ app.get('/summarize-market', async (req, res) => {
             const docRef = doc(db, 'summaries', currentDate);
 
             await setDoc(docRef, { ...data, timestamp: new Date().toISOString() });
-            
+
             res.json({ message: "Data saved to Firestore", data });
         } else {
             res.status(500).json({ error: "Failed to fetch Alpha Vantage data" });
@@ -123,14 +156,20 @@ app.get('/news1', async (req, res) => {
         }
 
         console.log(`Most recent ticker fetched: ${ticker}`);
-       
-            const articles = await fetchNewsArticles(ticker);
-            
-                const docRef = doc(db, 'articles', currentDate);
-                await setDoc(docRef, {...articles, timestamp: new Date().toISOString() });
-                res.json({ message: "Articles saved to Firestore", articles });
-          
-      
+
+        const articles = await fetchNewsArticles(ticker);
+
+        const docRef = doc(db, 'articles', currentDate);
+        await setDoc(docRef, { ...articles, timestamp: new Date().toISOString() });
+        res.json({ message: "Articles saved to Firestore", articles });
+
+        const analysis = await getAnalysis(articles);
+        if (analysis) {
+            writeAnalysis(analysis);
+        } else {
+            res.status(500).json({ error: "tis an error"});
+        }
+
     } catch (err) {
         console.error(err);
         res.status(500).json({ error: "internal server error", details: err.message });
