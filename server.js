@@ -3,6 +3,11 @@ import {
     getFirestore,
     doc,
     setDoc,
+    query,
+    collection, 
+    orderBy,
+    getDocs,
+    limit,
 } from "firebase/firestore";
 import request from 'request-promise';
 import dotenv from 'dotenv';
@@ -60,11 +65,8 @@ const fetchAlphaVantageData = async () => {
     }
 };
 
+
 const fetchNewsArticles = async (ticker) => {
-    // if (!ticker) {
-    //     throw new Error("Ticker is required to fetch news articles");
-    // }
-    
     const url = `https://www.alphavantage.co/query?function=NEWS_SENTIMENT&tickers=${ticker}&time_from=${startDate}&apikey=${ALPHA_VANTAGE_API_KEY}`;
     try {
         const response = await request.get({
@@ -100,17 +102,32 @@ app.get('/summarize-market', async (req, res) => {
     }
 });
 
-app.get('/articles', async (req, res) => {
-    const ticker = req.query.ticker;
+app.get('/news1', async (req, res) => {
     try {
-        const data = await fetchNewsArticles(ticker);
-        if (data) {
-            res.json({ data });
-        } else {
-            res.status(500).json({ error: "Failed to get articles" });
+        const tickerQuery = query(
+            collection(db, "summaries"),
+            orderBy("timestamp", "desc"),
+            limit(1)
+        );
+        const querySnapshot = await getDocs(tickerQuery);
+        let ticker;
+
+        querySnapshot.forEach((doc) => {
+            const data = doc.data();
+            ticker = data.most_actively_traded[0].ticker;
+        });
+
+        if (!ticker) {
+            return res.status(404).json({ error: "No ticker found in the latest summaries." });
         }
+
+        console.log(`Most recent ticker fetched: ${ticker}`);
+        const articles = await fetchNewsArticles(ticker);
+        console.log(articles);
+
     } catch (err) {
-        res.status(500).json({ error: "Internal Server Error", details: err.message });
+        console.error(err);
+        res.status(500).json({ error: "internal server error", details: err.message});
     }
 });
 
@@ -123,3 +140,16 @@ app.listen(PORT, () => {
 });
 
 
+// app.get('/articles', async (req, res) => {
+//     const ticker = req.query.ticker;
+//     try {
+//         const data = await fetchNewsArticles(ticker);
+//         if (data) {
+//             res.json({ data });
+//         } else {
+//             res.status(500).json({ error: "Failed to get articles" });
+//         }
+//     } catch (err) {
+//         res.status(500).json({ error: "Internal Server Error", details: err.message });
+//     }
+// });
