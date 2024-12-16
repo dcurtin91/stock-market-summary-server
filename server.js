@@ -89,18 +89,35 @@ const fetchNewsArticles = async (ticker) => {
 
 const getAnalysis = async (articles, ticker) => {
     try {
+
+        const limitedFeed = articles.feed.slice(0, 10);
+
+        const tickerSentiment = limitedFeed.map((item) => ({
+            overall_sentiment_label: item.overall_sentiment_label || "Neutral",
+            overall_sentiment_score: item.overall_sentiment_score || "0",
+            sentiments: item.ticker_sentiment?.map((sentiment) => ({
+                ticker: sentiment?.ticker || "Unknown",
+                sentiment_label: sentiment?.ticker_sentiment_label || "Neutral",
+                sentiment_score: sentiment?.ticker_sentiment_score || "0",
+            })) || [],
+        }));
+
+        
+        const formattedSentiment = JSON.stringify(tickerSentiment, null, 2);
+        
         const completion = await openai.chat.completions.create({
             model: "gpt-4",
             messages: [
                 { role: "system", content: "You are a helpful assistant." },
                 {
-                    "role": "user",
-                    "content": `Please respond in JSON format (please do not include any copy before the json response):
-            {
-                "analysis": "<Based on the data provided, share a summary of the overall sentiment toward this stock ${ticker} in 4-5 sentences. Use simple terms.>"
-            }
-                ${JSON.stringify(articles.feed.ticker_sentiment)}`
-                }
+                    role: "user",
+                    content: `Based on the following sentiment data for stock ${ticker}, provide a summary in JSON format:
+                    ${formattedSentiment}
+                    Please respond in this format:
+                    {
+                        "analysis": "<summary>"
+                    }`,
+                },
             ],
         });
         console.log("OPENAI Summary Generated");
