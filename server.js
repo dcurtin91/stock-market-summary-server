@@ -115,8 +115,10 @@ const getAnalysis = async (articles, ticker) => {
                     ${formattedSentiment}
                     Please respond in this format:
                     {
-                        "analysis": "<summary>"
+                        "analysis": "<Brief summary of the overall sentiment towards ${ticker}. 5-6 sentences.>",
+                        "timestamp": "<Today's date is ${currentDate}. Provide timestamp in ISO 8601 format>",
                     }`,
+                    
                 },
             ],
         });
@@ -129,7 +131,7 @@ const getAnalysis = async (articles, ticker) => {
 };
 
 const writeAnalysis = async (analysis) => {
-    const docRef = doc(db, 'analysis', currentDate);
+    const docRef = doc(db, 'ai', currentDate);
     const parsedAnalysis = JSON.parse(analysis);
     setDoc(docRef, parsedAnalysis);
 };
