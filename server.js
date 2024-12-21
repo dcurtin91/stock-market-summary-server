@@ -130,8 +130,8 @@ const getAnalysis = async (articles, ticker) => {
     }
 };
 
-const writeAnalysis = async (analysis) => {
-    const docRef = doc(db, 'ai', currentDate);
+const writeAnalysis = async (analysis, index) => {
+    const docRef = doc(db, `ai-${index + 1}`, currentDate);
     const parsedAnalysis = JSON.parse(analysis);
     setDoc(docRef, parsedAnalysis);
 };
@@ -154,8 +154,13 @@ app.get('/summarize-market', async (req, res) => {
     }
 });
 
-app.get('/news1', async (req, res) => {
+app.get('/news/:index', async (req, res) => {
     try {
+        const index = parseInt(req.params.index, 10);
+        if (isNaN(index) || index < 0 || index > 3) {
+            return res.status(400).json({ error: "Invalid index parameter" });
+        }
+
         const tickerQuery = query(
             collection(db, "summaries"),
             orderBy("timestamp", "desc"),
@@ -166,26 +171,23 @@ app.get('/news1', async (req, res) => {
 
         querySnapshot.forEach((doc) => {
             const data = doc.data();
-            ticker = data.most_actively_traded[1].ticker;
+            ticker = data.most_actively_traded[index].ticker;
         });
 
         if (!ticker) {
             return res.status(404).json({ error: "No ticker found in the latest summaries." });
         }
 
-        console.log(`Most recent ticker fetched: ${ticker}`);
-
         const articles = await fetchNewsArticles(ticker);
-
-        const docRef = doc(db, 'articles', currentDate);
+        const docRef = doc(db, `articles-${index + 1}`, currentDate);
         await setDoc(docRef, { ...articles, timestamp: new Date().toISOString() });
         res.json({ message: "Articles saved to Firestore", articles });
 
         const analysis = await getAnalysis(articles, ticker);
         if (analysis) {
-            writeAnalysis(analysis);
+            writeAnalysis(analysis, index);
         } else {
-            res.status(500).json({ error: "tis an error"});
+            res.status(500).json({ error: "tis an error" });
         }
 
     } catch (err) {
@@ -193,10 +195,6 @@ app.get('/news1', async (req, res) => {
         res.status(500).json({ error: "internal server error", details: err.message });
     }
 });
-
-
-
-
 
 app.listen(PORT, () => {
     console.log(`Server is running on port ${PORT}`);
