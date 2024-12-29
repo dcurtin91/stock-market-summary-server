@@ -115,7 +115,7 @@ const getAnalysis = async (articles, ticker) => {
                     ${formattedSentiment}
                     Please respond in this format:
                     {
-                        "analysis": "<Three key points that highlight the implications for investors or market participants>",
+                        "analysis": "<Three key points that highlight the implications for investors or market participants. Format the title of each point as "point_1", "point_2", "point_3".>",
                         "timestamp": "<Today's date is ${currentDate}. Provide timestamp in ISO 8601 format>",
                     }`,
                     
