@@ -111,11 +111,11 @@ const getAnalysis = async (articles, ticker) => {
                 { role: "system", content: "You are a helpful assistant." },
                 {
                     role: "user",
-                    content: `Based on the following sentiment data for stock ${ticker}, provide a summary in JSON format:
+                    content: `Based on the data provided below about the ticker ${ticker}, summarize the insights with a focus on Market Implications. Please consider overall sentiment trends, relevance scores, and specific references to AILE's performance. Please provide a summary in JSON format:
                     ${formattedSentiment}
                     Please respond in this format:
                     {
-                        "analysis": "<Brief summary of the overall sentiment towards ${ticker}. 5-6 sentences.>",
+                        "analysis": "<Three key points that highlight the implications for investors or market participants>",
                         "timestamp": "<Today's date is ${currentDate}. Provide timestamp in ISO 8601 format>",
                     }`,
                     
