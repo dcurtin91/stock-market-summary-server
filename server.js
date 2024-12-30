@@ -136,6 +136,27 @@ const writeAnalysis = async (analysis, index) => {
     setDoc(docRef, parsedAnalysis);
 };
 
+const tickerInfo = async (ticker) => {
+    const url = `https://www.alphavantage.co/query?function=OVERVIEW&symbol=${ticker}&apikey=${ALPHA_VANTAGE_API_KEY}`;
+    try {
+        const response = await request.get({
+            url: url,
+            json: true,
+            headers: { 'User-Agent': 'request' }
+        });
+        console.log("Ticker Info Captured");
+        return response;
+    } catch (err) {
+        console.error('Error:', err);
+        return null;
+    }
+};
+
+const writeTickerInfo = async (tickerInfo, index) => {
+    const docRef = doc(db, `ticker-info-${index + 1}`, currentDate);
+    setDoc(docRef, tickerInfo);
+}
+
 app.get('/summarize-market', async (req, res) => {
     try {
         const data = await fetchAlphaVantageData();
@@ -183,12 +204,20 @@ app.get('/news/:index', async (req, res) => {
         await setDoc(docRef, { ...articles, timestamp: new Date().toISOString() });
         res.json({ message: "Articles saved to Firestore", articles });
 
-        const analysis = await getAnalysis(articles, ticker);
-        if (analysis) {
-            writeAnalysis(analysis, index);
+        // const analysis = await getAnalysis(articles, ticker);
+        // if (analysis) {
+        //     writeAnalysis(analysis, index);
+        // } else {
+        //     res.status(500).json({ error: "tis an error" });
+        // }
+
+        const tickerData = await tickerInfo(ticker);
+        if (tickerData) {
+            writeTickerInfo(tickerData, index);
         } else {
             res.status(500).json({ error: "tis an error" });
         }
+        console.log(tickerData);
 
     } catch (err) {
         console.error(err);
