@@ -133,7 +133,7 @@ const getAnalysis = async (articles, ticker) => {
 const writeAnalysis = async (analysis, index) => {
     const docRef = doc(db, `ai-${index + 1}`, currentDate);
     const parsedAnalysis = JSON.parse(analysis);
-    setDoc(docRef, parsedAnalysis);
+    await setDoc(docRef, parsedAnalysis);
 };
 
 const tickerInfo = async (ticker) => {
@@ -154,7 +154,7 @@ const tickerInfo = async (ticker) => {
 
 const writeTickerInfo = async (tickerInfo, index) => {
     const docRef = doc(db, `ticker-info-${index + 1}`, currentDate);
-    setDoc(docRef, tickerInfo);
+    await setDoc(docRef, { ...tickerInfo, timestamp: new Date().toISOString() });
 }
 
 app.get('/summarize-market', async (req, res) => {
