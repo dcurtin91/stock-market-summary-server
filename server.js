@@ -35,6 +35,7 @@ const PORT = process.env.PORT || 3000;
 
 const ALPHA_VANTAGE_API_KEY = process.env.ALPHA_VANTAGE_API_KEY;
 const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
+const FMP_API_KEY = process.env.FMP_API_KEY;
 
 const openai = new OpenAI({ apiKey: OPENAI_API_KEY });
 
@@ -45,23 +46,55 @@ let day = date.getDate();
 let month = date.getMonth() + 1;
 let year = date.getFullYear();
 let currentDate = `${year}-${month}-${day}`;
-let startDate = `${year}${month}01T0130`; //this needs to be fixed!!!
+let startDate = `20241201T0130`; //this needs to be fixed!!!
 
 app.use(cors({
     origin: '*'
 }));
 
 
-const fetchAlphaVantageData = async () => {
-    const url = `https://www.alphavantage.co/query?function=TOP_GAINERS_LOSERS&apikey=${ALPHA_VANTAGE_API_KEY}`;
+// const fetchAlphaVantageData = async () => {
+//     const url = `https://www.alphavantage.co/query?function=TOP_GAINERS_LOSERS&apikey=${ALPHA_VANTAGE_API_KEY}`;
 
+//     try {
+//         const response = await request.get({
+//             url: url,
+//             json: true,
+//             headers: { 'User-Agent': 'request' }
+//         });
+//         console.log("Alpha Vantage Data Captured");
+//         return response;
+//     } catch (err) {
+//         console.error('Error:', err);
+//         return null;
+//     }
+// };
+
+const fetchTopGainers = async () => {
+    const url = `https://financialmodelingprep.com/api/v3/stock_market/gainers?apikey=${FMP_API_KEY}`;
     try {
         const response = await request.get({
             url: url,
             json: true,
             headers: { 'User-Agent': 'request' }
         });
-        console.log("Alpha Vantage Data Captured");
+        console.log("Top Gainers Captured");
+        return response;
+    } catch (err) {
+        console.error('Error:', err);
+        return null;
+    }
+};
+
+const fetchTopLosers = async () => {
+    const url = `https://financialmodelingprep.com/api/v3/stock_market/losers?apikey=${FMP_API_KEY}`;
+    try {
+        const response = await request.get({
+            url: url,
+            json: true,
+            headers: { 'User-Agent': 'request' }
+        });
+        console.log("Top Losers Captured");
         return response;
     } catch (err) {
         console.error('Error:', err);
@@ -111,7 +144,7 @@ const getAnalysis = async (articles, ticker) => {
                 { role: "system", content: "You are a helpful assistant." },
                 {
                     role: "user",
-                    content: `Based on the data provided below about the ticker ${ticker}, summarize the insights with a focus on Market Implications. Please consider overall sentiment trends, relevance scores, and specific references to AILE's performance. Please provide a summary in JSON format:
+                    content: `Based on the data provided below about the ticker ${ticker}, summarize the insights with a focus on Market Implications. Please consider overall sentiment trends, relevance scores, and specific references to ${ticker}'s performance. Please provide a summary in JSON format:
                     ${formattedSentiment}
                     Please respond in this format:
                     {
@@ -130,10 +163,10 @@ const getAnalysis = async (articles, ticker) => {
     }
 };
 
-const writeAnalysis = async (analysis, index) => {
+const writeAnalysis = (analysis, index) => {
     const docRef = doc(db, `ai-${index + 1}`, currentDate);
     const parsedAnalysis = JSON.parse(analysis);
-    await setDoc(docRef, parsedAnalysis);
+    setDoc(docRef, parsedAnalysis);
 };
 
 const tickerInfo = async (ticker) => {
@@ -152,22 +185,40 @@ const tickerInfo = async (ticker) => {
     }
 };
 
-const writeTickerInfo = async (tickerInfo, index) => {
+const writeTickerInfo = (tickerInfo, index) => {
     const docRef = doc(db, `ticker-info-${index + 1}`, currentDate);
-    await setDoc(docRef, { ...tickerInfo, timestamp: new Date().toISOString() });
+    setDoc(docRef, { ...tickerInfo, timestamp: new Date().toISOString() });
 }
 
-app.get('/summarize-market', async (req, res) => {
+app.get('/top-gainers', async (req, res) => {
     try {
-        const data = await fetchAlphaVantageData();
+        const data = await fetchTopGainers();
         if (data) {
-            const docRef = doc(db, 'summaries', currentDate);
+            const docRef = doc(db, 'top-gainers', currentDate);
 
-            await setDoc(docRef, { ...data, timestamp: new Date().toISOString() });
+            await setDoc(docRef, { top_gainers: data, timestamp: new Date().toISOString() });
 
             res.json({ message: "Data saved to Firestore", data });
         } else {
-            res.status(500).json({ error: "Failed to fetch Alpha Vantage data" });
+            res.status(500).json({ error: "Failed to fetch top gainers" });
+        }
+    } catch (err) {
+        console.error("Error while saving data to Firestore:", err);
+        res.status(500).json({ error: "Internal Server Error", details: err.message });
+    }
+});
+
+app.get('/top-losers', async (req, res) => {
+    try {
+        const data = await fetchTopLosers();
+        if (data) {
+            const docRef = doc(db, 'top-losers', currentDate);
+
+            await setDoc(docRef, { top_losers: data, timestamp: new Date().toISOString() });
+
+            res.json({ message: "Data saved to Firestore", data });
+        } else {
+            res.status(500).json({ error: "Failed to fetch top losers" });
         }
     } catch (err) {
         console.error("Error while saving data to Firestore:", err);
@@ -204,12 +255,12 @@ app.get('/news/:index', async (req, res) => {
         await setDoc(docRef, { ...articles, timestamp: new Date().toISOString() });
         res.json({ message: "Articles saved to Firestore", articles });
 
-        // const analysis = await getAnalysis(articles, ticker);
-        // if (analysis) {
-        //     writeAnalysis(analysis, index);
-        // } else {
-        //     res.status(500).json({ error: "tis an error" });
-        // }
+        const analysis = await getAnalysis(articles, ticker);
+        if (analysis) {
+            writeAnalysis(analysis, index);
+        } else {
+            res.status(500).json({ error: "tis an error" });
+        }
 
         const tickerData = await tickerInfo(ticker);
         if (tickerData) {
