@@ -102,6 +102,23 @@ const fetchTopLosers = async () => {
     }
 };
 
+const fetchMostActivelyTraded = async () => {
+    const url = `https://financialmodelingprep.com/api/v3/stock_market/actives?apikey=${FMP_API_KEY}`;
+    try {
+        const response = await request.get({
+            url: url,
+            json: true,
+            headers: { 'User-Agent': 'request' }
+        });
+        console.log("Most Actively Traded Captured");
+        return response;
+    } catch (err) {
+        console.error('Error:', err);
+        return null;
+    }
+;}
+
+
 
 const fetchNewsArticles = async (ticker) => {
     const url = `https://www.alphavantage.co/query?function=NEWS_SENTIMENT&tickers=${ticker}&time_from=${startDate}&apikey=${ALPHA_VANTAGE_API_KEY}`;
@@ -225,6 +242,25 @@ app.get('/top-losers', async (req, res) => {
         res.status(500).json({ error: "Internal Server Error", details: err.message });
     }
 });
+
+app.get('/most-actively-traded', async (req, res) => {
+    try {
+        const data = await fetchMostActivelyTraded();
+        if (data) {
+            const docRef = doc(db, 'most-actively-traded', currentDate);
+
+            await setDoc(docRef, { most_actively_traded: data, timestamp: new Date().toISOString() });
+
+            res.json({ message: "Data saved to Firestore", data });
+        } else {
+            res.status(500).json({ error: "Failed to fetch most actively traded" });
+        }
+    } catch (err) {
+        console.error("Error while saving data to Firestore:", err);
+        res.status(500).json({ error: "Internal Server Error", details: err.message });
+    }
+});
+
 
 app.get('/news/:index', async (req, res) => {
     try {
