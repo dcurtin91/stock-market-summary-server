@@ -187,7 +187,7 @@ const writeAnalysis = (analysis, index) => {
 };
 
 const tickerInfo = async (ticker) => {
-    const url = `https://www.alphavantage.co/query?function=OVERVIEW&symbol=${ticker}&apikey=${ALPHA_VANTAGE_API_KEY}`;
+    const url = `https://financialmodelingprep.com/api/v3/profile/${ticker}?apikey=${FMP_API_KEY}`;
     try {
         const response = await request.get({
             url: url,
