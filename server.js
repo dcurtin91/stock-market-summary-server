@@ -204,7 +204,7 @@ const tickerInfo = async (ticker) => {
 
 const writeTickerInfo = (tickerInfo, index) => {
     const docRef = doc(db, `ticker-info-${index + 1}`, currentDate);
-    setDoc(docRef, { ...tickerInfo, timestamp: new Date().toISOString() });
+    setDoc(docRef, { ticker_info: tickerInfo, timestamp: new Date().toISOString() });
 }
 
 app.get('/top-gainers', async (req, res) => {
