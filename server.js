@@ -42,33 +42,17 @@ const openai = new OpenAI({ apiKey: OPENAI_API_KEY });
 
 const date = new Date();
 let day = date.getDate();
-//let week_ago = date.getDate() - 7;
 let month = date.getMonth() + 1;
 let year = date.getFullYear();
 let currentDate = `${year}-${month}-${day}`;
 let startDate = `20241201T0130`; //this needs to be fixed!!!
+
 
 app.use(cors({
     origin: '*'
 }));
 
 
-// const fetchAlphaVantageData = async () => {
-//     const url = `https://www.alphavantage.co/query?function=TOP_GAINERS_LOSERS&apikey=${ALPHA_VANTAGE_API_KEY}`;
-
-//     try {
-//         const response = await request.get({
-//             url: url,
-//             json: true,
-//             headers: { 'User-Agent': 'request' }
-//         });
-//         console.log("Alpha Vantage Data Captured");
-//         return response;
-//     } catch (err) {
-//         console.error('Error:', err);
-//         return null;
-//     }
-// };
 
 const fetchTopGainers = async () => {
     const url = `https://financialmodelingprep.com/api/v3/stock_market/gainers?apikey=${FMP_API_KEY}`;
@@ -122,7 +106,6 @@ const fetchMostActivelyTraded = async () => {
 
 const fetchNewsArticles = async (ticker) => {
     const url = `https://www.alphavantage.co/query?function=NEWS_SENTIMENT&tickers=${ticker}&time_from=${startDate}&apikey=${ALPHA_VANTAGE_API_KEY}`;
-    console.log(url);
     try {
         const response = await request.get({
             url: url,
