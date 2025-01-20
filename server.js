@@ -185,8 +185,8 @@ const tickerInfo = async (ticker) => {
     }
 };
 
-const writeTickerInfo = (tickerInfo, index) => {
-    const docRef = doc(db, `ticker-info-${index + 1}`, currentDate);
+const writeTickerInfo = (tickerInfo, ticker) => {
+    const docRef = doc(db, `ticker-info-${ticker}`, currentDate);
     setDoc(docRef, { ticker_info: tickerInfo, timestamp: new Date().toISOString() });
 }
 
@@ -248,16 +248,18 @@ app.get('/most-actively-traded', async (req, res) => {
 app.get('/news/:index', async (req, res) => {
     try {
         const index = parseInt(req.params.index, 10);
-        if (isNaN(index) || index < 0 || index > 3) {
+        if (isNaN(index) || index < 0 ) {
             return res.status(400).json({ error: "Invalid index parameter" });
         }
 
-        const tickerQuery = query(
+        const tickerQuery = query( /////
             collection(db, "summaries"),
             orderBy("timestamp", "desc"),
             limit(1)
         );
-        const querySnapshot = await getDocs(tickerQuery);
+        const querySnapshot = await getDocs(tickerQuery);////////////
+
+
         let ticker;
 
         querySnapshot.forEach((doc) => {
@@ -274,12 +276,34 @@ app.get('/news/:index', async (req, res) => {
         await setDoc(docRef, { ...articles, timestamp: new Date().toISOString() });
         res.json({ message: "Articles saved to Firestore", articles });
 
-        const analysis = await getAnalysis(articles, ticker);
-        if (analysis) {
-            writeAnalysis(analysis, index);
+        // const analysis = await getAnalysis(articles, ticker);
+        // if (analysis) {
+        //     writeAnalysis(analysis, index);
+        // } else {
+        //     res.status(500).json({ error: "tis an error" });
+        // }
+
+        const tickerData = await tickerInfo(ticker);
+        if (tickerData) {
+            writeTickerInfo(tickerData, ticker);
         } else {
             res.status(500).json({ error: "tis an error" });
         }
+        console.log(tickerData);
+
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: "internal server error", details: err.message });
+    }
+});
+
+app.get('/:ticker', async (req, res) => {
+    try {
+        const ticker = req.params.stock;
+        const articles = await fetchNewsArticles(ticker);
+        const docRef = doc(db, `${ticker}`, currentDate);
+        await setDoc(docRef, { ...articles, timestamp: new Date().toISOString() });
+        res.json({ message: "Articles saved to Firestore", articles });
 
         const tickerData = await tickerInfo(ticker);
         if (tickerData) {
@@ -293,7 +317,8 @@ app.get('/news/:index', async (req, res) => {
         console.error(err);
         res.status(500).json({ error: "internal server error", details: err.message });
     }
-});
+}
+);
 
 app.listen(PORT, () => {
     console.log(`Server is running on port ${PORT}`);
