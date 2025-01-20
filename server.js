@@ -299,7 +299,7 @@ app.get('/news/:index', async (req, res) => {
 
 app.get('/:ticker', async (req, res) => {
     try {
-        const ticker = req.params.stock;
+        const ticker = req.params.ticker;
         const articles = await fetchNewsArticles(ticker);
         const docRef = doc(db, `${ticker}`, currentDate);
         await setDoc(docRef, { ...articles, timestamp: new Date().toISOString() });
@@ -307,7 +307,7 @@ app.get('/:ticker', async (req, res) => {
 
         const tickerData = await tickerInfo(ticker);
         if (tickerData) {
-            writeTickerInfo(tickerData, index);
+            writeTickerInfo(tickerData, ticker);
         } else {
             res.status(500).json({ error: "tis an error" });
         }
